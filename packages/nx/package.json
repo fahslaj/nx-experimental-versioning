@@ -171,5 +171,12 @@
         "x86_64-unknown-freebsd"
       ]
     }
+  },
+  "lerna": {
+    "command": {
+      "publish": {
+        "directory": "{workspaceRoot}/build/packages/{projectRoot}"
+      }
+    }
   }
 }

@@ -54,5 +54,12 @@
     "./src/executors/*/schema.json": "./src/executors/*/schema.json",
     "./src/executors/*.impl": "./src/executors/*.impl.js",
     "./src/executors/*/compat": "./src/executors/*/compat.js"
+  },
+  "lerna": {
+    "command": {
+      "publish": {
+        "directory": "{workspaceRoot}/build/packages/{projectRoot}"
+      }
+    }
   }
 }

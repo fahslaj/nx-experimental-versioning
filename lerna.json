@@ -1,10 +1,13 @@
 {
-  "packages": ["build/packages/*", "build/packages/nx/native-packages/*"],
+  "packages": ["packages/*", "packages-legacy/*"],
   "version": "16.4.0-beta.4",
   "granularPathspec": false,
   "command": {
     "publish": {
       "graphType": "all"
     }
+  },
+  "__experimentalAutomaticVersions": {
+    "referencePackage": "nx"
   }
 }
