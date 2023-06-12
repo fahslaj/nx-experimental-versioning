@@ -35,7 +35,7 @@
   "lerna": {
     "command": {
       "publish": {
-        "directory": "{workspaceRoot}/build/packages/{projectRoot}-legacy"
+        "directory": "{workspaceRoot}/build/packages/eslint-plugin-nx-legacy"
       }
     }
   }
