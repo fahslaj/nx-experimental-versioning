@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execSync } from 'child_process';
+import { ChildProcessWithoutNullStreams, execSync, spawn } from 'child_process';
 import { rmSync } from 'fs';
 import { join } from 'path';
 import { parse } from 'semver';
@@ -87,11 +87,18 @@ const publish = require('lerna/commands/publish');
     execSync('git status --ahead-behind');
     await version(versionOptions);
     console.log(
-      'Check github: https://github.com/nrwl/nx/actions/workflows/publish.yml'
+      'Check github: https://github.com/fahslaj/nx-experimental-versioning/actions/workflows/publish.yml'
     );
   } else if (!options.skipPublish) {
     await version(versionOptions);
-    await publish({ ...versionOptions, ...publishOptions });
+
+    await setupAndRunVerdaccio();
+    await publish({
+      ...versionOptions,
+      ...publishOptions,
+      registry: 'http://localhost:4873',
+    });
+    await killVerdaccio();
   } else {
     await version(versionOptions);
     console.warn('Not Publishing because --dryRun was passed');
@@ -198,4 +205,18 @@ function parseArgs() {
 
 function getRegistry() {
   return new URL(execSync('npm config get registry').toString().trim());
+}
+
+let verdaccioProcess: ChildProcessWithoutNullStreams | undefined;
+
+async function setupAndRunVerdaccio() {
+  verdaccioProcess = spawn('pnpm', ['local-registry', 'enable'], {
+    detached: true,
+  });
+}
+
+async function killVerdaccio() {
+  if (verdaccioProcess) {
+    verdaccioProcess.kill();
+  }
 }
