@@ -78,7 +78,6 @@ const publish = require('lerna/commands/publish');
   }
 
   const publishOptions: Record<string, boolean | string | undefined> = {
-    gitReset: false,
     distTag: distTag,
     includePrivate: !!options.local,
     bump: 'from-git',
