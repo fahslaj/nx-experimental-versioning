@@ -1,24 +1,13 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
-import { readFileSync, rmSync } from 'fs';
+import { rmSync } from 'fs';
 import { join } from 'path';
+import { parse } from 'semver';
 import { URL } from 'url';
 import * as yargs from 'yargs';
 
 const version = require('lerna/commands/version');
 const publish = require('lerna/commands/publish');
-
-const lernaJsonPath = join(__dirname, '../lerna.json');
-const originalLernaJson = readFileSync(lernaJsonPath);
-
-// function hideFromGitIndex(uncommittedFiles: string[]) {
-//   execSync(`git update-index --assume-unchanged ${uncommittedFiles.join(' ')}`);
-
-//   return () =>
-//     execSync(
-//       `git update-index --no-assume-unchanged ${uncommittedFiles.join(' ')}`
-//     );
-// }
 
 (async () => {
   const options = parseArgs();
@@ -30,47 +19,25 @@ const originalLernaJson = readFileSync(lernaJsonPath);
     });
   }
 
-  // const currentLatestVersion = execSync('npm view nx version')
-  //   .toString()
-  //   .trim();
+  const currentLatestVersion = execSync('npm view nx version')
+    .toString()
+    .trim();
 
-  // const parsedVersion = parse(options.version);
-  // const parsedCurrentLatestVersion = parse(currentLatestVersion);
+  const parsedVersion = parse(options.version);
+  const parsedCurrentLatestVersion = parse(currentLatestVersion);
 
   const distTag = 'latest';
-  //   parsedVersion?.prerelease.length > 0
-  //     ? 'next'
-  //     : parsedVersion?.major < parsedCurrentLatestVersion.major
-  //     ? 'previous'
-  //     : 'latest';
+  parsedVersion?.prerelease.length! > 0
+    ? 'next'
+    : parsedVersion?.major! < parsedCurrentLatestVersion?.major!
+    ? 'previous'
+    : 'latest';
 
   const buildCommand = 'pnpm build';
   console.log(`> ${buildCommand}`);
   execSync(buildCommand, {
     stdio: [0, 1, 2],
   });
-
-  if (options.local) {
-    // updateLernaJsonVersion(currentLatestVersion);
-  }
-
-  if (options.local) {
-    // Force all projects to be not private
-    // const projects = JSON.parse(
-    //   execSync('npx lerna list --json --all').toString()
-    // );
-    // for (const proj of projects) {
-    //   if (proj.private) {
-    //     console.log('Publishing private package locally:', proj.name);
-    //     const packageJsonPath = join(proj.location, 'package.json');
-    //     const original = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    //     writeFileSync(
-    //       packageJsonPath,
-    //       JSON.stringify({ ...original, private: false })
-    //     );
-    //   }
-    // }
-  }
 
   if (!options.local && process.env.NPM_TOKEN) {
     // Delete all .node files that were built during the previous steps
@@ -90,9 +57,9 @@ const originalLernaJson = readFileSync(lernaJsonPath);
     conventionalPrerelease: options.tag === 'next',
     preid: options.preid,
     forcePublish: true,
-    // createRelease: 'github',
+    createRelease: 'github',
     tagVersionPrefix: '',
-    // exact: true,
+    exact: true,
     gitRemote: options.gitRemote,
     gitTagVersion: !process.env.NPM_TOKEN,
     message: 'chore(misc): publish %v',
@@ -102,48 +69,33 @@ const originalLernaJson = readFileSync(lernaJsonPath);
 
   if (options.local) {
     versionOptions.conventionalCommits = false;
-    // delete versionOptions.createRelease;
-    // versionOptions.gitTagVersion = false;
+    // @ts-ignore
+    delete versionOptions.createRelease;
+    versionOptions.gitTagVersion = false;
     versionOptions.loglevel = options.loglevel ?? 'error';
     versionOptions.yes = true;
     versionOptions.bump = options.version ? options.version : 'minor';
   }
 
-  if (options.local) {
-    /**
-     * Hide changes from Lerna
-     */
-    // const uncommittedFiles = execSync('git diff --name-only --relative HEAD .')
-    //   .toString()
-    //   .split('\n')
-    //   .filter((i) => i.length > 0)
-    //   .filter((f) => existsSync(f));
-    // const unhideFromGitIndex = hideFromGitIndex(uncommittedFiles);
-    // process.on('exit', unhideFromGitIndex);
-    // process.on('SIGTERM', unhideFromGitIndex);
-    // process.on('SIGINT', unhideFromGitIndex);
-  }
-
   const publishOptions: Record<string, boolean | string | undefined> = {
     gitReset: false,
     distTag: distTag,
+    includePrivate: !!options.local,
+    bump: 'from-git',
   };
 
-  // if (!options.local && !process.env.NPM_TOKEN) {
-  // execSync('git status --ahead-behind');
-  // await version(versionOptions);
-  // console.log(
-  //   'Check github: https://github.com/nrwl/nx/actions/workflows/publish.yml'
-  // );
-  // } else if (!options.skipPublish) {
-  // await publish({ ...versionOptions, ...publishOptions });
-  // } else {
-  await version(versionOptions);
-  console.warn('Not Publishing because --dryRun was passed');
-  // }
-
-  if (options.local) {
-    // restoreOriginalLernaJson();
+  if (!options.local && !process.env.NPM_TOKEN) {
+    execSync('git status --ahead-behind');
+    await version(versionOptions);
+    console.log(
+      'Check github: https://github.com/nrwl/nx/actions/workflows/publish.yml'
+    );
+  } else if (!options.skipPublish) {
+    await version(versionOptions);
+    await publish({ ...versionOptions, ...publishOptions });
+  } else {
+    await version(versionOptions);
+    console.warn('Not Publishing because --dryRun was passed');
   }
 })();
 
@@ -244,18 +196,6 @@ function parseArgs() {
 
   return parsedArgs;
 }
-
-// function updateLernaJsonVersion(version: string) {
-//   const json = JSON.parse(readFileSync(lernaJsonPath).toString());
-
-//   json.version = version;
-
-//   writeFileSync(lernaJsonPath, JSON.stringify(json));
-// }
-
-// function restoreOriginalLernaJson() {
-//   writeFileSync(lernaJsonPath, originalLernaJson);
-// }
 
 function getRegistry() {
   return new URL(execSync('npm config get registry').toString().trim());
