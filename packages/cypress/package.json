@@ -52,5 +52,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "lerna": {
+    "command": {
+      "publish": {
+        "directory": "{workspaceRoot}/build/{projectRoot}"
+      }
+    }
   }
 }
