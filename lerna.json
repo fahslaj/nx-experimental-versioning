@@ -1,5 +1,9 @@
 {
-  "packages": ["packages/*", "packages-legacy/*"],
+  "packages": [
+    "packages/*",
+    "packages-legacy/*",
+    "packages/nx/native-packages/*"
+  ],
   "version": "16.4.0-beta.4",
   "granularPathspec": false,
   "command": {
